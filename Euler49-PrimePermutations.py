@@ -7,42 +7,44 @@ import itertools as itools
 import math
 
 DIGITS = 4
-NUMS = 3
-BLACKLIST = ((1487, 4817, 8147))
+SEQ_LEN = 3
+BLACKLIST = ((1487, 4817, 8147),)
+PRIMELIST = dtools.primeListWithDigits(DIGITS)
+PRIMESET = frozenset(PRIMELIST)
+GREATEST_PRIME = max(PRIMELIST)
+SMALLEST_PRIME = min(PRIMELIST)
 
-def checkProperty(nums, pList = None):
-    #print('Checking', nums)
-    comp = None
-    for i, j in zip(range(len(nums) - 1), range(1,len(nums))):
-        if comp == None:
-            comp = nums[j] - nums[i]
-            if comp <= 0:
-                return False
-        else:
-            if nums[j] - nums[i] != comp:
-                return False
-    numsAsStrs = [str(n) for n in nums]
-    perms = list(''.join(_) for _ in itools.permutations(numsAsStrs[0]))
-    if not all(n in perms for n in numsAsStrs):
-        return False
-    if pList == None:
-        for n in nums:
-            if not dtools.primeCheck(n):
-                return False
+def sequenceGenerator(prefix = None):
+    #print('Called with prefix=', prefix)
+    if not prefix:
+        for p in PRIMELIST:
+            for grp in sequenceGenerator((p,)):
+                if len(grp) == SEQ_LEN:
+                    yield grp
+    elif len(prefix) == 1:
+        #print('Set1:', set(int(''.join(_)) for _ in itools.permutations(str(prefix[-1]))))
+        #print('Set2:', '*primes*')
+        #print('Set3:', set(range(prefix[-1] + 1, GREATEST_PRIME + 1)))
+        #print('Intersection:', sorted(set(int(''.join(_)) for _ in itools.permutations(str(prefix[-1]))) & PRIMESET & set(range(prefix[-1] + 1, GREATEST_PRIME + 1))))
+        for nextprime in sorted(set(int(''.join(_)) for _ in itools.permutations(str(prefix[-1]))) & PRIMESET & set(range(prefix[-1] + 1, GREATEST_PRIME + 1))):
+            #print('Supposedly calling on', prefix + (nextprime,))
+            for g in sequenceGenerator(prefix + (nextprime,)):
+                yield g
+    elif len(prefix) == SEQ_LEN:
+        yield prefix
     else:
-        if not all(dtools.primeCheckWithList(n, pList) for n in nums):
-            return False
-    return True
-    
-    
+        #print('Seq len:', len(prefix))
+        np = 2 * prefix[-1] - prefix[0]
+        if np in (PRIMESET & set(int(''.join(_)) for _ in itools.permutations(str(prefix[-1])))):
+            for g in sequenceGenerator(prefix + (np,)):
+                yield g
+        else:
+            #print('Impossible')
+            pass
     
 if __name__ == '__main__':
-    wholePrimeList = dtools.primeListLessThan(math.sqrt(10 ** DIGITS)+1)
-    primes = dtools.primeListWithDigits(DIGITS)
-    for partperm in itools.permutations(primes, 2):
-        #print('Partperm:', partperm)
-        perm = partperm + (partperm[-1] - partperm[0],)
-        if checkProperty(perm, wholePrimeList) and perm not in BLACKLIST:
-            string = ''.join(str(i) for i in perm)
-            print('Answer:', string)
+    for seq in sequenceGenerator():
+        if not seq in BLACKLIST:
+            print('Answer:', ''.join(str(_) for _ in seq))
+    
             
